@@ -937,6 +937,11 @@ function! Y_CodeHighlight_Apply(filename)
         execute('source /tmp/yavideCppMacro.vim')
         execute('source /tmp/yavideCppTypedef.vim')
         execute('source /tmp/yavideCppExternForwardDeclaration.vim')
+
+        " Following command is a quick hack to apply the new syntax for
+        " the given buffer. I haven't found any other more viable way to do it 
+        " while keeping it fast & low on resources,
+        execute(':redrawstatus')
     endif
 endfunction
 

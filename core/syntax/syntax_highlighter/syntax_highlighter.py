@@ -36,6 +36,7 @@ class VimSyntaxHighlighter:
                 vim_syntax_file.writelines(vim_highlight_rules)
    
     def __instantiate_syntax_tag_manager_list(self, tag_id_list, filename):
+        self.tag_manager_list[:] = []
         for tag_id in tag_id_list:
             self.tag_manager_list.append(
                     VimSyntaxTag(

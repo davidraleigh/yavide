@@ -69,7 +69,7 @@ class SourceCodeHighlighter(Service):
 
     def run_impl(self, filename):
         self.syntax_highlighter.generate_vim_syntax_file(filename)
-        YavideUtils.send_vim_remote_command(self.yavide_instance, ":call Y_CodeHighlight_Apply('" + filename + "')")
+        YavideUtils.call_vim_remote_function(self.yavide_instance, "Y_CodeHighlight_Apply('" + filename + "')")
 
 class YavideServer():
     def __init__(self, msg_queue, yavide_instance):
