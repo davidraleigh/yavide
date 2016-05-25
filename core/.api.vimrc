@@ -61,8 +61,9 @@ function! Y_Env_Init()
     " Start Yavide server background service
     call Y_ServerStart()
 
-    " Start all Yavide server background services
-    call Y_ServerStartAllServices()
+    " Trigger starting specific background services
+    call Y_CodeHighlight_Start()
+    call Y_ProjectBuilder_Start()
 endfunction
 
 " """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -803,63 +804,21 @@ function! Y_ServerStartAllServices()
 python << EOF
 from multiprocessing import Queue
 
-server_queue.put([0xF0, "start_all_services"])
+server_queue.put([0xF0, 0xFF, "start_all_services"])
 
 EOF
 endfunction
 
 " """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Function: 	Y_ServerStartService()
-" Description:	Starts sepcific Yavide server background services.
+" Description:	Starts specific Yavide server background services.
 " Dependency:
 " """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! Y_ServerStartService(id)
+function! Y_ServerStartService(id, payload)
 python << EOF
 from multiprocessing import Queue
 
-server_queue.put([0xF1, vim.eval('a:id')])
-
-EOF
-endfunction
-
-" """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Function: 	Y_ServerStopAllServices()
-" Description:	Stops all Yavide server background services.
-" Dependency:
-" """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! Y_ServerStopAllServices()
-python << EOF
-from multiprocessing import Queue
-
-server_queue.put([0xF2, "stop_all_services"])
-
-EOF
-endfunction
-
-" """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Function: 	Y_ServerStopService()
-" Description:	Stops specific Yavide server backround service.
-" Dependency:
-" """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! Y_ServerStopService(id)
-python << EOF
-from multiprocessing import Queue
-
-server_queue.put([0xF3, vim.eval('a:id')])
-
-EOF
-endfunction
-
-" """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Function: 	Y_ServerStop()
-" Description:	Stops Yavide server background service.
-" Dependency:
-" """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! Y_ServerStop()
-python << EOF
-from multiprocessing import Queue
-
-server_queue.put([0xFF, "shutdown_and_exit"])
+server_queue.put([0xF1, vim.eval('a:id'), vim.eval('a:payload')])
 
 EOF
 endfunction
@@ -873,7 +832,49 @@ function! Y_ServerSendMsg(id, payload)
 python << EOF
 from multiprocessing import Queue
 
-server_queue.put([int(vim.eval('a:id')), vim.eval('a:payload')])
+server_queue.put([0xF2, int(vim.eval('a:id')), vim.eval('a:payload')])
+
+EOF
+endfunction
+
+" """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Function: 	Y_ServerStopAllServices()
+" Description:	Stops all Yavide server background services.
+" Dependency:
+" """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! Y_ServerStopAllServices()
+python << EOF
+from multiprocessing import Queue
+
+server_queue.put([0xFD, 0xFF, "stop_all_services"])
+
+EOF
+endfunction
+
+" """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Function: 	Y_ServerStopService()
+" Description:	Stops specific Yavide server backround service.
+" Dependency:
+" """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! Y_ServerStopService(id)
+python << EOF
+from multiprocessing import Queue
+
+server_queue.put([0xFE, 0xFF, vim.eval('a:id')])
+
+EOF
+endfunction
+
+" """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Function: 	Y_ServerStop()
+" Description:	Stops Yavide server background service.
+" Dependency:
+" """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+function! Y_ServerStop()
+python << EOF
+from multiprocessing import Queue
+
+server_queue.put([0xFF, 0xFF, "shutdown_and_exit"])
 
 EOF
 endfunction
@@ -889,7 +890,10 @@ endfunction
 " Dependency:
 " """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 function! Y_CodeHighlight_Start()
-    call Y_ServerStartService(0)
+"python import sys
+"python import vim
+"python sys.argv = ['', vim.eval('l:currentBuffer'), "/tmp", "-n", "-c", "-s", "-e", "-ev", "-u", "-cusm", "-lv", "-vd", "-fp", "-fd", "-t", "-m", "-efwd"]  
+    call Y_ServerStartService(0, 'some param')
 endfunction
 
 " """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -909,10 +913,6 @@ endfunction
 function! Y_CodeHighlight_Run()
     let l:currentBuffer = expand('%:p"')
     call Y_ServerSendMsg(0, l:currentBuffer)
-
-"python import sys
-"python import vim
-"python sys.argv = ['', vim.eval('l:currentBuffer'), "/tmp", "-n", "-c", "-s", "-e", "-ev", "-u", "-cusm", "-lv", "-vd", "-fp", "-fd", "-t", "-m", "-efwd"]
 endfunction
 
 " """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -991,6 +991,13 @@ endfunction
 "	BUILD MANAGEMENT API
 " 
 " --------------------------------------------------------------------------------------------------------------------------------------
+" Function: 	Y_ProjectBuilder_Start()
+" Description:	Starts the project builder background service.
+" Dependency:
+function! Y_ProjectBuilder_Start()
+    call Y_ServerStartService(1, 'some param')
+endfunction
+
 " """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Function: 	Y_Build_RunMake()
 " Description:	Run the build via Makefile. 
