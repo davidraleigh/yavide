@@ -77,7 +77,7 @@ PLUGINS="$PLUGINS https://github.com/ervandew/supertab"
 PLUGINS="$PLUGINS https://github.com/majutsushi/tagbar"
 
 # Airline
-PLUGINS="$PLUGINS https://github.com/bling/vim-airline"
+PLUGINS="$PLUGINS https://github.com/vim-airline/vim-airline"
 
 # A
 PLUGINS="$PLUGINS https://github.com/vim-scripts/a.vim"
